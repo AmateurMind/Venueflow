@@ -7,11 +7,9 @@ import ReactMarkdown from "react-markdown";
 import { 
   Users, 
   Clock, 
-  MapPin, 
   ShieldAlert, 
   ChevronRight, 
   Settings,
-  MessageSquare,
   Navigation,
   Activity,
   Loader2,
@@ -22,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Navbar } from "@/components/Navbar";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -131,27 +130,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/80 to-background" />
       </div>
 
-      <nav className="sticky top-0 z-50 border-b border-white/5 bg-background/50 backdrop-blur-xl">
-        <div className="container mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-tr from-primary to-emerald-400 rounded-xl flex items-center justify-center glow-primary">
-              <Navigation className="text-primary-foreground w-5 h-5 -rotate-45" />
-            </div>
-            <span className="text-xl md:text-2xl font-heading tracking-tighter">Venue<span className="text-primary italicized">Flow</span></span>
-          </div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">Live Map</a>
-            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">Facilities</a>
-            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">Emergency</a>
-            <Button variant="secondary" className="rounded-full px-6 bg-secondary/10 hover:bg-secondary/20 text-secondary border-secondary/20">
-              Your Seat: <span className="ml-1 font-bold text-foreground">B204</span>
-            </Button>
-            <Button variant="outline" size="icon" onClick={() => setShowSettings(true)} className="rounded-full bg-background/50 border-white/10 hover:bg-white/10">
-              <Settings className="w-4 h-4 text-muted-foreground" />
-            </Button>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       <main className="container mx-auto px-4 md:px-6 py-8 md:py-12 space-y-12">
         {/* Header Section */}
