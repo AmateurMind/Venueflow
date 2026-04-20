@@ -3,6 +3,40 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const MAX_MESSAGE_LENGTH = 1000;
 
+/**
+ * Extracts named entities from the message using the Cloud Natural Language API.
+ * Returns a comma-separated list of entity names, or an empty string if unavailable.
+ */
+async function extractEntities(text: string): Promise<string> {
+  const apiKey = process.env.GOOGLE_CLOUD_API_KEY || process.env.GOOGLE_AI_STUDIO_API_KEY;
+  if (!apiKey) return "";
+
+  try {
+    const res = await fetch(
+      `https://language.googleapis.com/v1/documents:analyzeEntities?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          document: { type: "PLAIN_TEXT", content: text },
+          encodingType: "UTF8",
+        }),
+      }
+    );
+
+    if (!res.ok) return "";
+
+    const data = await res.json();
+    const names: string[] = (data.entities ?? [])
+      .slice(0, 5)
+      .map((e: { name: string }) => e.name);
+
+    return names.length > 0 ? names.join(", ") : "";
+  } catch {
+    return "";
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -25,6 +59,12 @@ export async function POST(req: Request) {
     // Sanitize: strip any characters that could break prompt injection patterns
     const sanitizedMessage = message.replace(/[<>]/g, "").trim();
 
+    // Cloud Natural Language API — extract entities to enrich the Gemini prompt
+    const entities = await extractEntities(sanitizedMessage);
+    const entityContext = entities
+      ? `\nDetected topics in user query (via Cloud Natural Language API): ${entities}.`
+      : "";
+
     if (!apiKey) {
       // Fallback to "Demo" mode if no API key is provided
       let responseText = "**[Demo Mode]** As your Venue Assistant, I recommend ";
@@ -45,7 +85,7 @@ export async function POST(req: Request) {
     const systemPrompt = `You are "Venue Assistant", a highly intelligent digital concierge for Metrodome Arena. 
 You answer questions for an attendee based on live venue sensor data. Keep your responses concise, helpful, and use markdown (like *italics*, **bold**, or <u>underline</u>). 
 Here is the current live context of the venue and the user:
-${JSON.stringify(context)}
+${JSON.stringify(context)}${entityContext}
 
 User question: ${sanitizedMessage}`;
 

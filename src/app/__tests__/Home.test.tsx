@@ -15,6 +15,11 @@ jest.mock("@/lib/firebase", () => ({
   isFirebaseConfigured: true,
 }));
 
+// Mock Cloud Functions to avoid real HTTP calls in tests
+jest.mock("@/lib/cloud-functions", () => ({
+  triggerCrowdEvent: jest.fn().mockResolvedValue(null),
+}));
+
 // Mock next/image
 jest.mock("next/image", () => {
   const MockImage = ({ src, alt }: { src: string; alt: string }) => (
@@ -57,6 +62,14 @@ jest.mock("framer-motion", () => ({
 }));
 
 describe("Home page", () => {
+  beforeAll(() => {
+    jest.useFakeTimers();
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     (global.fetch as jest.Mock).mockResolvedValue({
@@ -121,10 +134,12 @@ describe("Home page", () => {
   });
 
   it("sending a message calls the fetch API", async () => {
-    // football call (on mount) returns no match
+    // On mount: football call → returns no match
+    // On mount: BigQuery log-event → returns ok
+    // After user sends: assistant call → returns response
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({ ok: true, json: async () => ({ error: "No matches" }) })
-      // assistant call returns response
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ logged: true }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ response: "Here is what I found." }) });
 
     render(<Home />);
@@ -141,10 +156,12 @@ describe("Home page", () => {
   });
 
   it("shows new user message in chat after sending", async () => {
-    // football call (on mount) returns no match
+    // On mount: football call → returns no match
+    // On mount: BigQuery log-event → returns ok
+    // After user sends: assistant call → returns response
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({ ok: true, json: async () => ({ error: "No matches" }) })
-      // assistant call returns response
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ logged: true }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ response: "Go to Gate 4." }) });
 
     render(<Home />);

@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Navbar } from "@/components/Navbar";
 import { logAnalyticsEvent } from "@/lib/firebase";
+import { triggerCrowdEvent } from "@/lib/cloud-functions";
 
 interface MatchData {
   league: string;
@@ -60,16 +61,42 @@ export default function Home() {
     const storedKey = localStorage.getItem("gemini_api_key");
     if (storedKey) setApiKey(storedKey);
 
-    // Log page view
+    // Firebase Analytics — log page view
     logAnalyticsEvent("page_view", { page: "dashboard" });
+
+    // BigQuery — log dashboard open event (fire and forget)
+    fetch("/api/analytics/log-event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event_type: "dashboard_open", page: "dashboard" }),
+    }).catch(() => {});
 
     // Simulate Live Data
     const interval = setInterval(() => {
       setWaitTime(prev => Math.max(2, prev + (Math.random() > 0.5 ? 1 : -1)));
-      setDensity(prev => Math.min(100, Math.max(10, prev + Math.floor(Math.random() * 5 - 2))));
+      setDensity(prev => {
+        const next = Math.min(100, Math.max(10, prev + Math.floor(Math.random() * 5 - 2)));
+
+        // Cloud Function — trigger alert when density spikes above 80%
+        if (next > 80 && prev <= 80) {
+          triggerCrowdEvent({ eventType: "alert", density: next });
+          // BigQuery — log the high density event
+          fetch("/api/analytics/log-event", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              event_type: "high_density_alert",
+              page: "dashboard",
+              density: next,
+            }),
+          }).catch(() => {});
+        }
+
+        return next;
+      });
       setGateStatus(Math.random() > 0.8 ? "Moderate" : "Fast");
     }, 4500);
-    
+
     // Fetch live match
     fetch("/api/football")
       .then(r => r.json())

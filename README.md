@@ -45,8 +45,11 @@ Built for the **[Prompt Wars](https://promptwars.dev)** challenge (Apr 2026).
 
 ### Google Services
 - **[Google Gemini AI](https://ai.google.dev)** (`@google/generative-ai`) — AI concierge backend
+- **[Cloud Natural Language API](https://cloud.google.com/natural-language)** — Entity extraction on user queries to enrich Gemini prompts
 - **[Firebase](https://firebase.google.com)** (`firebase@12`) — Firestore + Analytics event tracking
 - **[Google Maps](https://developers.google.com/maps)** (`@vis.gl/react-google-maps`) — Venue map integration
+- **[BigQuery](https://cloud.google.com/bigquery)** (`@google-cloud/bigquery`) — Venue event logging (dashboard opens, density alerts)
+- **[Cloud Functions (Gen 2)](https://cloud.google.com/functions)** — HTTP function that processes crowd events and computes alert levels
 
 ### Other
 - **[Framer Motion](https://www.framer.com/motion/)** — Animations and transitions
