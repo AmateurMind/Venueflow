@@ -1,32 +1,34 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Utensils, Coffee, Droplets, Restroom, ArrowRight, Clock, Users, CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Navbar } from "@/components/Navbar";
+import { db, isFirebaseConfigured } from "@/lib/firebase";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 
 const FOOD_STALLS = [
-  { id: 1, name: "East Concourse Grill", type: "Food", section: "Sec 200–210", wait: 4, capacity: 30 },
-  { id: 2, name: "West Snack Bar", type: "Food", section: "Sec 100–110", wait: 12, capacity: 75 },
-  { id: 3, name: "North Food Court", type: "Food", section: "Sec 300–320", wait: 9, capacity: 60 },
-  { id: 4, name: "VIP Lounge Café", type: "Food", section: "VIP Level", wait: 2, capacity: 15 },
-  { id: 5, name: "South Wrap & Roll", type: "Food", section: "Sec 400–420", wait: 18, capacity: 85 },
+  { id: "food-1", name: "East Concourse Grill", type: "food", section: "Sec 200–210", wait: 4, capacity: 30 },
+  { id: "food-2", name: "West Snack Bar", type: "food", section: "Sec 100–110", wait: 12, capacity: 75 },
+  { id: "food-3", name: "North Food Court", type: "food", section: "Sec 300–320", wait: 9, capacity: 60 },
+  { id: "food-4", name: "VIP Lounge Café", type: "food", section: "VIP Level", wait: 2, capacity: 15 },
+  { id: "food-5", name: "South Wrap & Roll", type: "food", section: "Sec 400–420", wait: 18, capacity: 85 },
 ];
 
 const RESTROOMS = [
-  { id: 1, name: "East Wing – Level 2", section: "Near Sec 205", wait: 1, capacity: 20 },
-  { id: 2, name: "North Wing – Level 1", section: "Near Sec 310", wait: 5, capacity: 55 },
-  { id: 3, name: "West Wing – Level 1", section: "Near Sec 105", wait: 3, capacity: 40 },
-  { id: 4, name: "Main Concourse", section: "Near Gate 4", wait: 8, capacity: 70 },
+  { id: "rest-1", name: "East Wing – Level 2", type: "restroom", section: "Near Sec 205", wait: 1, capacity: 20 },
+  { id: "rest-2", name: "North Wing – Level 1", type: "restroom", section: "Near Sec 310", wait: 5, capacity: 55 },
+  { id: "rest-3", name: "West Wing – Level 1", type: "restroom", section: "Near Sec 105", wait: 3, capacity: 40 },
+  { id: "rest-4", name: "Main Concourse", type: "restroom", section: "Near Gate 4", wait: 8, capacity: 70 },
 ];
 
 const WATER_STATIONS = [
-  { id: 1, name: "Hydration Hub A", section: "Sec 214", wait: 0, capacity: 5 },
-  { id: 2, name: "Hydration Hub B", section: "Sec 312", wait: 1, capacity: 12 },
-  { id: 3, name: "Main Gate Station", section: "Gate 1 Lobby", wait: 3, capacity: 28 },
+  { id: "water-1", name: "Hydration Hub A", type: "water", section: "Sec 214", wait: 0, capacity: 5 },
+  { id: "water-2", name: "Hydration Hub B", type: "water", section: "Sec 312", wait: 1, capacity: 12 },
+  { id: "water-3", name: "Main Gate Station", type: "water", section: "Gate 1 Lobby", wait: 3, capacity: 28 },
 ];
 
 function WaitBadge({ wait }: { wait: number }) {
@@ -35,7 +37,7 @@ function WaitBadge({ wait }: { wait: number }) {
   return <Badge className="bg-destructive/20 text-destructive border-destructive/30">{wait} min</Badge>;
 }
 
-function FacilityRow({ item, showIcon }: { item: any; showIcon?: boolean }) {
+function FacilityRow({ item }: { item: any }) {
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
@@ -68,13 +70,31 @@ function FacilityRow({ item, showIcon }: { item: any; showIcon?: boolean }) {
 export default function FacilitiesPage() {
   const [foodData, setFoodData] = useState(FOOD_STALLS);
   const [restroomData, setRestroomData] = useState(RESTROOMS);
+  const [usingFirebase, setUsingFirebase] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setFoodData(prev => prev.map(s => ({ ...s, wait: Math.max(0, s.wait + Math.floor(Math.random() * 3 - 1)), capacity: Math.min(100, Math.max(0, s.capacity + Math.floor(Math.random() * 6 - 3))) })));
-      setRestroomData(prev => prev.map(s => ({ ...s, wait: Math.max(0, s.wait + Math.floor(Math.random() * 2 - 1)), capacity: Math.min(100, Math.max(0, s.capacity + Math.floor(Math.random() * 8 - 4))) })));
-    }, 5000);
-    return () => clearInterval(interval);
+    if (isFirebaseConfigured) {
+      // Real-time Firestore listeners
+      setUsingFirebase(true);
+      const foodQ = query(collection(db, "facilities"), where("type", "==", "food"));
+      const restQ = query(collection(db, "facilities"), where("type", "==", "restroom"));
+
+      const unsubFood = onSnapshot(foodQ, (snap) => {
+        if (!snap.empty) setFoodData(snap.docs.map(d => ({ id: d.id, ...d.data() })) as any);
+      });
+      const unsubRest = onSnapshot(restQ, (snap) => {
+        if (!snap.empty) setRestroomData(snap.docs.map(d => ({ id: d.id, ...d.data() })) as any);
+      });
+
+      return () => { unsubFood(); unsubRest(); };
+    } else {
+      // Fallback: local simulation
+      const interval = setInterval(() => {
+        setFoodData(prev => prev.map(s => ({ ...s, wait: Math.max(0, s.wait + Math.floor(Math.random() * 3 - 1)), capacity: Math.min(100, Math.max(0, s.capacity + Math.floor(Math.random() * 6 - 3))) })));
+        setRestroomData(prev => prev.map(s => ({ ...s, wait: Math.max(0, s.wait + Math.floor(Math.random() * 2 - 1)), capacity: Math.min(100, Math.max(0, s.capacity + Math.floor(Math.random() * 8 - 4))) })));
+      }, 5000);
+      return () => clearInterval(interval);
+    }
   }, []);
 
   const bestFood = [...foodData].sort((a, b) => a.wait - b.wait)[0];
