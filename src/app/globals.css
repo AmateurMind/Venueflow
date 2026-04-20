@@ -1,0 +1,80 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-heading: var(--font-instrument-serif);
+  --font-body: var(--font-barlow);
+  
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+}
+
+:root {
+  --background: 197 26% 16%; /* #1d2d33 */
+  --foreground: 0 0% 98%;
+  
+  --card: 197 26% 20%;
+  --card-foreground: 0 0% 98%;
+  
+  --popover: 197 26% 20%;
+  --popover-foreground: 0 0% 98%;
+  
+  --primary: 152 33% 38%; /* #4c9574 */
+  --primary-foreground: 0 0% 98%;
+  
+  --secondary: 39 58% 66%; /* #dfc188 */
+  --secondary-foreground: 197 26% 16%;
+  
+  --muted: 176 35% 24%; /* #285451 */
+  --muted-foreground: 0 0% 80%;
+  
+  --accent: 350 27% 67%; /* #c3929a */
+  --accent-foreground: 197 26% 16%;
+  
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  
+  --border: 176 35% 30%;
+  --input: 176 35% 30%;
+  --ring: 152 33% 38%;
+  
+  --radius: 0.75rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+  .italicized {
+    @apply italic;
+  }
+  .underlined {
+    @apply underline decoration-accent/40 underline-offset-4;
+  }
+}
