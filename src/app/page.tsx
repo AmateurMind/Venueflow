@@ -39,6 +39,9 @@ export default function Home() {
   const [apiKey, setApiKey] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   
+  // Football State
+  const [match, setMatch] = useState<any>(null);
+  
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,6 +55,12 @@ export default function Home() {
       setDensity(prev => Math.min(100, Math.max(10, prev + Math.floor(Math.random() * 5 - 2))));
       setGateStatus(Math.random() > 0.8 ? "Moderate" : "Fast");
     }, 4500);
+    
+    // Fetch live match
+    fetch("/api/football")
+      .then(r => r.json())
+      .then(d => { if (!d.error) setMatch(d) })
+      .catch();
 
     return () => clearInterval(interval);
   }, []);
@@ -134,28 +143,62 @@ export default function Home() {
 
       <main className="container mx-auto px-4 md:px-6 py-8 md:py-12 space-y-12">
         {/* Header Section */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="space-y-6 max-w-2xl"
-        >
-          <div className="flex items-center gap-3">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
-            </span>
-            <Badge variant="outline" className="text-secondary border-secondary/30 px-4 py-1.5 bg-secondary/5 font-mono text-xs">
-              LIVE FROM METRODOME ARENA
-            </Badge>
-          </div>
-          <h1 className="text-5xl md:text-7xl font-heading leading-[0.95] tracking-tight">
-            Navigate the <span className="italicized text-gradient">Intensity</span>.
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-lg leading-relaxed">
-            Real-time insights for the modern spectator. Move <span className="italicized text-primary">smarter</span>, wait <span className="italicized text-primary">less</span>, and never miss a critical moment.
-          </p>
-        </motion.div>
+        <div className="flex flex-col lg:flex-row gap-8 justify-between items-start lg:items-center border-b border-white/5 pb-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="space-y-6 max-w-2xl"
+          >
+            <div className="flex items-center gap-3">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+              </span>
+              <Badge variant="outline" className="text-secondary border-secondary/30 px-4 py-1.5 bg-secondary/5 font-mono text-xs">
+                LIVE FROM METRODOME ARENA
+              </Badge>
+            </div>
+            <h1 className="text-5xl md:text-7xl font-heading leading-[0.95] tracking-tight">
+              Navigate the <span className="italicized text-gradient">Intensity</span>.
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-lg leading-relaxed">
+              Real-time insights for the modern spectator. Move <span className="italicized text-primary">smarter</span>, wait <span className="italicized text-primary">less</span>, and never miss a critical moment.
+            </p>
+          </motion.div>
+
+          {match && (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 }} className="w-full max-w-sm shrink-0">
+              <Card className="glass border-primary/20 glow-primary bg-background/40">
+                <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                  <CardTitle className="text-sm font-mono tracking-widest text-primary uppercase">{match.league}</CardTitle>
+                  <CardDescription className="text-xs text-muted-foreground flex items-center gap-1">
+                    {match.time ? <span className="animate-pulse text-destructive font-bold">{match.time}'</span> : match.status}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex items-center justify-between pb-5">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-12 h-12 relative bg-white rounded-full overflow-hidden p-1">
+                      <Image src={match.teams.home.logo} alt={match.teams.home.name} fill className="object-contain p-1.5" />
+                    </div>
+                    <span className="text-xs font-bold w-20 text-center truncate">{match.teams.home.name}</span>
+                  </div>
+                  <div className="text-3xl font-heading italic px-4 flex items-center gap-3">
+                    <span>{match.teams.home.goals}</span>
+                    <span className="text-muted-foreground/30 text-xl">-</span>
+                    <span>{match.teams.away.goals}</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-12 h-12 relative bg-white rounded-full overflow-hidden p-1">
+                      <Image src={match.teams.away.logo} alt={match.teams.away.name} fill className="object-contain p-1.5" />
+                    </div>
+                    <span className="text-xs font-bold w-20 text-center truncate">{match.teams.away.name}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </div>
 
         {/* Live Metrics Grid */}
         <motion.div 
