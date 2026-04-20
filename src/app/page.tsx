@@ -21,6 +21,17 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Navbar } from "@/components/Navbar";
+import { logAnalyticsEvent } from "@/lib/firebase";
+
+interface MatchData {
+  league: string;
+  status: string;
+  time: number | null;
+  teams: {
+    home: { name: string; logo: string; goals: number };
+    away: { name: string; logo: string; goals: number };
+  };
+}
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -40,7 +51,7 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState(false);
   
   // Football State
-  const [match, setMatch] = useState<any>(null);
+  const [match, setMatch] = useState<MatchData | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -48,6 +59,9 @@ export default function Home() {
     setMounted(true);
     const storedKey = localStorage.getItem("gemini_api_key");
     if (storedKey) setApiKey(storedKey);
+
+    // Log page view
+    logAnalyticsEvent("page_view", { page: "dashboard" });
 
     // Simulate Live Data
     const interval = setInterval(() => {
@@ -73,6 +87,7 @@ export default function Home() {
 
   const saveSettings = () => {
     localStorage.setItem("gemini_api_key", apiKey);
+    logAnalyticsEvent("settings_configured", { has_api_key: !!apiKey });
     setShowSettings(false);
     if (!messages.find(m => m.content.includes("configured"))) {
       setMessages(prev => [...prev, { role: 'bot', content: "API Key configured! How can I help you navigate the stadium?"}]);
@@ -86,6 +101,7 @@ export default function Home() {
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setInputValue("");
     setIsLoading(true);
+    logAnalyticsEvent("assistant_message_sent", { has_api_key: !!apiKey });
 
     try {
       const response = await fetch('/api/assistant', {
@@ -128,7 +144,7 @@ export default function Home() {
   return (
     <div className="relative min-h-screen">
       {/* Hero Background */}
-      <div className="fixed inset-0 z-[-1]">
+      <div className="fixed inset-0 z-[-1]" aria-hidden="true">
         <Image
           src="https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=2600&auto=format&fit=crop"
           alt="Stadium background"
@@ -141,7 +157,7 @@ export default function Home() {
 
       <Navbar />
 
-      <main className="container mx-auto px-4 md:px-6 py-8 md:py-12 space-y-12">
+      <main id="main-content" className="container mx-auto px-4 md:px-6 py-8 md:py-12 space-y-12">
         {/* Header Section */}
         <div className="flex flex-col lg:flex-row gap-8 justify-between items-start lg:items-center border-b border-white/5 pb-8">
           <motion.div 
@@ -305,7 +321,13 @@ export default function Home() {
               </CardHeader>
               
               <CardContent className="flex-1 flex flex-col justify-between p-0 overflow-hidden">
-                 <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+                 <div
+                   ref={scrollRef}
+                   role="log"
+                   aria-live="polite"
+                   aria-label="Venue assistant conversation"
+                   className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6"
+                 >
                     <AnimatePresence initial={false}>
                       {messages.map((m, idx) => (
                         <ChatBubble key={idx} type={m.role} message={m.content} />
@@ -314,8 +336,12 @@ export default function Home() {
                     
                     {isLoading && (
                       <div className="flex justify-start">
-                        <div className="bg-card border border-white/5 px-4 py-3 rounded-2xl rounded-tl-none rounded-tr-2xl text-sm w-fit max-w-[85%] flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin text-accent" />
+                        <div
+                          role="status"
+                          aria-label="Analyzing venue data"
+                          className="bg-card border border-white/5 px-4 py-3 rounded-2xl rounded-tl-none rounded-tr-2xl text-sm w-fit max-w-[85%] flex items-center gap-2"
+                        >
+                          <Loader2 className="w-4 h-4 animate-spin text-accent" aria-hidden="true" />
                           <span className="text-muted-foreground italicized text-xs">Analyzing venue data...</span>
                         </div>
                       </div>
@@ -325,20 +351,24 @@ export default function Home() {
                  <div className="p-4 bg-background/60 border-t border-white/5 backdrop-blur-md">
                    <div className="relative flex items-center">
                      <Input 
+                       id="chat-input"
                        value={inputValue}
                        onChange={(e) => setInputValue(e.target.value)}
                        onKeyDown={handleKeyPress}
-                       placeholder="Ask about queues, exits, or food..." 
+                       placeholder="Ask about queues, exits, or food..."
+                       aria-label="Ask the Venue Assistant"
                        className="bg-black/40 border-white/10 rounded-full h-12 pl-5 pr-14 text-sm focus-visible:ring-accent focus-visible:border-accent" 
                        disabled={isLoading}
                      />
                      <Button 
+                        id="chat-send-btn"
                         size="icon" 
                         onClick={handleSendMessage}
                         disabled={isLoading || !inputValue.trim()}
+                        aria-label="Send message"
                         className="absolute right-1.5 rounded-full bg-accent hover:bg-accent/90 text-accent-foreground h-9 w-9 my-auto flex-shrink-0"
                      >
-                        <ChevronRight className="w-5 h-5" />
+                        <ChevronRight className="w-5 h-5" aria-hidden="true" />
                      </Button>
                    </div>
                  </div>
@@ -350,15 +380,17 @@ export default function Home() {
 
       <footer className="mt-20 border-t border-white/5 py-12 bg-black/40 backdrop-blur-xl">
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2 opacity-80">
-            <Navigation className="text-primary w-5 h-5" />
+          <div className="flex items-center gap-2 opacity-80" aria-label="VenueFlow brand">
+            <Navigation className="text-primary w-5 h-5" aria-hidden="true" />
             <span className="text-lg font-heading italicized underline decoration-primary/20">VenueFlow.</span>
           </div>
-          <div className="flex gap-6 text-sm text-muted-foreground/80 font-medium">
-            <a href="#" className="hover:text-foreground transition-colors">Accessibility</a>
-            <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
-            <a href="#" className="hover:text-foreground transition-colors">Support</a>
-          </div>
+          <nav aria-label="Footer navigation">
+            <div className="flex gap-6 text-sm text-muted-foreground/80 font-medium">
+              <a href="#main-content" className="hover:text-foreground transition-colors">Accessibility</a>
+              <a href="#main-content" className="hover:text-foreground transition-colors">Privacy</a>
+              <a href="#main-content" className="hover:text-foreground transition-colors">Support</a>
+            </div>
+          </nav>
           <p className="text-xs text-muted-foreground/50 font-mono">
             &copy; 2026 VENUEFLOW. BUILT FOR PROMPT WARS.
           </p>
@@ -407,7 +439,16 @@ export default function Home() {
   );
 }
 
-function MetricCard({ icon, title, value, description, trend, highlight = false }: any) {
+interface MetricCardProps {
+  icon: React.ReactNode;
+  title: string;
+  value: string;
+  description: string;
+  trend: string;
+  highlight?: boolean;
+}
+
+function MetricCard({ icon, title, value, description, trend, highlight = false }: MetricCardProps) {
   return (
     <Card className={`glass border-white/5 overflow-hidden group transition-all duration-500 hover:border-white/20 hover:bg-white/[0.02] ${highlight ? 'bg-secondary/5 border-secondary/20 glow-secondary' : ''}`}>
       <CardHeader className="pb-2">
