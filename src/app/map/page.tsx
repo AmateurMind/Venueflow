@@ -11,15 +11,15 @@ import { db, isFirebaseConfigured } from "@/lib/firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 
 const MOCK_SECTIONS = [
-  { id: "S200", label: "200s", lat: 28.6139, lng: 77.2090, density: 72 },
-  { id: "S100", label: "100s", lat: 28.6125, lng: 77.2075, density: 45 },
-  { id: "S300", label: "300s", lat: 28.6150, lng: 77.2078, density: 85 },
-  { id: "S400", label: "400s", lat: 28.6118, lng: 77.2105, density: 38 },
-  { id: "SVIP", label: "VIP", lat: 28.6130, lng: 77.2090, density: 22 },
+  { id: "S200", label: "200s", lat: 41.3812, lng: 2.1232, density: 72 },
+  { id: "S100", label: "100s", lat: 41.3805, lng: 2.1220, density: 45 },
+  { id: "S300", label: "300s", lat: 41.3803, lng: 2.1235, density: 85 },
+  { id: "S400", label: "400s", lat: 41.3814, lng: 2.1222, density: 38 },
+  { id: "SVIP", label: "VIP", lat: 41.3809, lng: 2.1228, density: 22 },
 ];
 
-// Stadium center (demo: Jawaharlal Nehru Stadium, New Delhi)
-const STADIUM_CENTER = { lat: 28.6133, lng: 77.2090 };
+// Stadium center (Spotify Camp Nou, Barcelona)
+const STADIUM_CENTER = { lat: 41.3809, lng: 2.1228 };
 
 function densityColor(density: number) {
   if (density > 70) return "#e54d4d";

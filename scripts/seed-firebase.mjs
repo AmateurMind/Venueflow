@@ -33,11 +33,11 @@ const facilities = [
 ];
 
 const sections = [
-  { id: "S200", label: "200s", lat: 28.6129, lng: 77.2295, density: 72 },
-  { id: "S100", label: "100s", lat: 28.6119, lng: 77.2280, density: 45 },
-  { id: "S300", label: "300s", lat: 28.6140, lng: 77.2278, density: 85 },
-  { id: "S400", label: "400s", lat: 28.6115, lng: 77.2305, density: 38 },
-  { id: "SVIP", label: "VIP", lat: 28.6129, lng: 77.2295, density: 22 },
+  { id: "S200", label: "200s", lat: 41.3812, lng: 2.1232, density: 72 },
+  { id: "S100", label: "100s", lat: 41.3805, lng: 2.1220, density: 45 },
+  { id: "S300", label: "300s", lat: 41.3803, lng: 2.1235, density: 85 },
+  { id: "S400", label: "400s", lat: 41.3814, lng: 2.1222, density: 38 },
+  { id: "SVIP", label: "VIP", lat: 41.3809, lng: 2.1228, density: 22 },
 ];
 
 async function seed() {
